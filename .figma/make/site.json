@@ -1,0 +1,10 @@
+{
+  "description": "Streamline pricing and management for doors and windows with a comprehensive system that enhances project tracking, client management, and financial oversight.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
