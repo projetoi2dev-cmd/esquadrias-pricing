@@ -1,21 +1,10 @@
-import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { useEffect, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 
 export const cn = (...c: (string | false | undefined | null)[]) => c.filter(Boolean).join(' ')
 export const brl = (v: number, d = 0) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: d, maximumFractionDigits: d })
 export const num = (v: number) => v.toLocaleString('pt-BR')
-
-export function useLoading(deps: unknown[] = [], ms = 650) {
-  const [l, setL] = useState(true)
-  useEffect(() => {
-    setL(true)
-    const t = setTimeout(() => setL(false), ms)
-    return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
-  return l
-}
 
 type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'

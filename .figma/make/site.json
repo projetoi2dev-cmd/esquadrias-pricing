@@ -1,5 +1,7 @@
 {
-  "description": "Streamline pricing and management for doors and windows with a comprehensive system that enhances project tracking, client management, and financial oversight.",
+  "title": "Esquadra · Precificação e Gestão",
+  "description": "Sistema de precificação e gestão para esquadrias: orçamentos, materiais, projetos, equipe, clientes e financeiro.",
+  "language": "pt-BR",
   "robots": {
     "index": false
   },

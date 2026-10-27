@@ -111,3 +111,26 @@ body {
   to { transform: translateX(0); opacity: 1; }
 }
 .slide-in { animation: slide-in 0.2s ease-out; }
+
+@media print {
+  html,
+  body,
+  #root {
+    height: auto;
+    background: #fff;
+  }
+  .app-shell {
+    display: block;
+  }
+  .app-main {
+    overflow: visible;
+  }
+  .app-main > div {
+    max-width: none;
+    padding: 0;
+  }
+  .app-sidebar,
+  .app-header {
+    display: none;
+  }
+}
