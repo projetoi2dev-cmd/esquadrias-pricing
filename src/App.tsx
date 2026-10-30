@@ -4,6 +4,7 @@ import {
   Bell, Moon, Sun, ChevronsLeft, ChevronsRight, ChevronRight, Menu, AppWindow, X, LogOut, Loader2, RefreshCw,
 } from 'lucide-react'
 import { Avatar, Button, Card, IconButton, cn } from './components/ui'
+import { ReadOnlyBanner } from './components/States'
 import { useAuth } from './lib/auth'
 import { useWorkspace } from './lib/workspace'
 import { useNotifications } from './lib/queries/notifications'
@@ -104,6 +105,7 @@ export default function App() {
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'Usuário'
   const displayEmail = profile?.email || user.email || ''
   const roleLabel = role ? ROLE_LABELS[role] : 'Membro'
+  const isViewer = role === 'visualizador'
 
   const sidebar = (
     <div className="flex flex-col h-full">
@@ -232,6 +234,7 @@ export default function App() {
 
         <main className="app-main flex-1 overflow-y-auto">
           <div className="max-w-[1440px] mx-auto p-4 lg:p-8" key={`${page}-${workspace.id}`}>
+            {isViewer && <ReadOnlyBanner roleLabel={roleLabel} />}
             <Suspense fallback={<div className="flex items-center justify-center gap-2 py-20 text-sm text-muted-foreground"><Loader2 className="animate-spin" size={18} /> Carregando módulo...</div>}>
               <Page />
             </Suspense>

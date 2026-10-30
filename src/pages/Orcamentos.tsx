@@ -7,6 +7,7 @@ import {
 import { EmptyState, QueryError } from '../components/States'
 import { useToast } from '../components/Toast'
 import { useWorkspace } from '../lib/workspace'
+import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabaseClient'
 import { calculatePricing, installmentValue } from '../lib/pricing'
 import { formatDate, parseDate, toDateInput, todayInput } from '../lib/format'
@@ -49,6 +50,7 @@ interface Draft {
 
 export default function Orcamentos() {
   const { workspace, workspaceId } = useWorkspace()
+  const { canWrite } = usePermissions()
   const queryClient = useQueryClient()
   const toast = useToast()
 
@@ -389,6 +391,7 @@ export default function Orcamentos() {
             type="number"
             step="0.5"
             value={value}
+            disabled={!canWrite}
             onChange={(event) => patch({ [key]: Number(event.target.value) } as Partial<Draft>)}
             className={cn(inputCls, 'h-8 pr-6 text-right', mono)}
           />
@@ -401,8 +404,8 @@ export default function Orcamentos() {
 
   return (
     <>
-      <PageHeader title="Orçamentos" subtitle={draft ? `${draft.code} · ${draft.id ? 'editando orçamento' : 'novo orçamento'}` : 'Carregando...'}>
-        <Button variant="primary" onClick={startNew}><Plus size={16} /> Novo Orçamento</Button>
+      <PageHeader title="Orçamentos" subtitle={draft ? `${draft.code} · ${draft.id ? (canWrite ? 'editando orçamento' : 'visualizando orçamento') : 'novo orçamento'}` : 'Carregando...'}>
+        {canWrite && <Button variant="primary" onClick={startNew}><Plus size={16} /> Novo Orçamento</Button>}
       </PageHeader>
 
       <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
@@ -451,41 +454,41 @@ export default function Orcamentos() {
                 <CardHeader title="Cliente e Obra" subtitle={draft.id ? 'Alterações são salvas no orçamento existente' : 'Novo orçamento'} />
                 <div className="px-6 pb-6 grid gap-4 md:grid-cols-2">
                   <Field label="Cliente">
-                    <select value={draft.clientId} onChange={(event) => patch({ clientId: event.target.value })} className={inputCls}>
+                    <select value={draft.clientId} disabled={!canWrite} onChange={(event) => patch({ clientId: event.target.value })} className={inputCls}>
                       <option value="">Selecione</option>
                       {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
                     </select>
                   </Field>
                   <Field label="Código">
-                    <input value={draft.code} onChange={(event) => patch({ code: event.target.value })} className={cn(inputCls, mono)} />
+                    <input value={draft.code} disabled={!canWrite} onChange={(event) => patch({ code: event.target.value })} className={cn(inputCls, mono)} />
                   </Field>
                   <Field label="Endereço da obra" className="md:col-span-2">
                     <div className="relative">
                       <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                      <input value={draft.address} onChange={(event) => patch({ address: event.target.value })} className={cn(inputCls, 'pl-9')} />
+                      <input value={draft.address} disabled={!canWrite} onChange={(event) => patch({ address: event.target.value })} className={cn(inputCls, 'pl-9')} />
                     </div>
                   </Field>
                   <Field label="Tipo de instalação">
-                    <select value={draft.installationType} onChange={(event) => patch({ installationType: event.target.value })} className={inputCls}>
+                    <select value={draft.installationType} disabled={!canWrite} onChange={(event) => patch({ installationType: event.target.value })} className={inputCls}>
                       {Object.entries(INSTALLATION_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                     </select>
                   </Field>
                   <Field label="Status">
-                    <select value={draft.status} onChange={(event) => patch({ status: event.target.value as QuoteStatus })} className={inputCls}>
+                    <select value={draft.status} disabled={!canWrite} onChange={(event) => patch({ status: event.target.value as QuoteStatus })} className={inputCls}>
                       {Object.entries(QUOTE_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                     </select>
                   </Field>
                   <Field label="Emissão">
-                    <input type="date" value={draft.issueDate} onChange={(event) => patch({ issueDate: event.target.value })} className={inputCls} />
+                    <input type="date" value={draft.issueDate} disabled={!canWrite} onChange={(event) => patch({ issueDate: event.target.value })} className={inputCls} />
                   </Field>
                   <Field label="Validade">
-                    <input type="date" value={draft.validUntil} onChange={(event) => patch({ validUntil: event.target.value })} className={inputCls} />
+                    <input type="date" value={draft.validUntil} disabled={!canWrite} onChange={(event) => patch({ validUntil: event.target.value })} className={inputCls} />
                   </Field>
                   <Field label="Prazo (dias)">
-                    <input type="number" min="1" value={draft.deliveryDays} onChange={(event) => patch({ deliveryDays: Number(event.target.value) })} className={cn(inputCls, mono)} />
+                    <input type="number" min="1" value={draft.deliveryDays} disabled={!canWrite} onChange={(event) => patch({ deliveryDays: Number(event.target.value) })} className={cn(inputCls, mono)} />
                   </Field>
                   <Field label="Retenção de garantia (%)">
-                    <input type="number" min="0" max="20" step="0.5" value={draft.retention} onChange={(event) => patch({ retention: Number(event.target.value) })} className={cn(inputCls, mono)} />
+                    <input type="number" min="0" max="20" step="0.5" value={draft.retention} disabled={!canWrite} onChange={(event) => patch({ retention: Number(event.target.value) })} className={cn(inputCls, mono)} />
                   </Field>
                 </div>
               </Card>
@@ -494,9 +497,9 @@ export default function Orcamentos() {
                 <CardHeader
                   title="Produtos"
                   subtitle={`${draft.items.length} itens no orçamento`}
-                  action={<Button size="sm" variant="primary" onClick={() => setPicker(!picker)}><Plus size={14} /> Adicionar Produtos</Button>}
+                  action={canWrite ? <Button size="sm" variant="primary" onClick={() => setPicker(!picker)}><Plus size={14} /> Adicionar Produtos</Button> : undefined}
                 />
-                {picker && (
+                {picker && canWrite && (
                   <div className="mx-6 mb-4 rounded-md border border-border bg-muted/50 p-1 slide-in">
                     {products.map((product) => (
                       <button key={product.id} onClick={() => addProduct(product)} className="w-full flex items-center justify-between px-3 py-2 rounded hover:bg-card text-sm text-left cursor-pointer">
@@ -521,17 +524,18 @@ export default function Orcamentos() {
                         <input
                           aria-label="Descrição do item"
                           value={item.description}
+                          disabled={!canWrite}
                           onChange={(event) => updateItem(item.key, { description: event.target.value })}
                           className={cn(inputCls, 'h-8 border-transparent bg-transparent px-1 font-medium text-sm hover:border-border focus:border-border')}
                         />
-                        <IconButton label={`Remover ${item.description}`} onClick={() => removeItem(item.key)}><Trash2 size={16} /></IconButton>
+                        {canWrite && <IconButton label={`Remover ${item.description}`} onClick={() => removeItem(item.key)}><Trash2 size={16} /></IconButton>}
                       </div>
                       <div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <Field label="Largura (m)"><input type="number" step="0.1" value={item.width} onChange={(event) => updateItem(item.key, { width: Number(event.target.value) })} className={cn(inputCls, 'h-9', mono)} /></Field>
-                        <Field label="Altura (m)"><input type="number" step="0.1" value={item.height} onChange={(event) => updateItem(item.key, { height: Number(event.target.value) })} className={cn(inputCls, 'h-9', mono)} /></Field>
-                        <Field label="Qtd."><input type="number" min={1} value={item.quantity} onChange={(event) => updateItem(item.key, { quantity: Math.max(1, Number(event.target.value)) })} className={cn(inputCls, 'h-9', mono)} /></Field>
-                        <Field label="Material (un)"><input type="number" min="0" step="0.01" value={item.materialUnitCost} onChange={(event) => updateItem(item.key, { materialUnitCost: Number(event.target.value) })} className={cn(inputCls, 'h-9', mono)} /></Field>
-                        <Field label="Mão de obra (un)"><input type="number" min="0" step="0.01" value={item.laborUnitCost} onChange={(event) => updateItem(item.key, { laborUnitCost: Number(event.target.value) })} className={cn(inputCls, 'h-9', mono)} /></Field>
+                        <Field label="Largura (m)"><input type="number" step="0.1" value={item.width} disabled={!canWrite} onChange={(event) => updateItem(item.key, { width: Number(event.target.value) })} className={cn(inputCls, 'h-9', mono)} /></Field>
+                        <Field label="Altura (m)"><input type="number" step="0.1" value={item.height} disabled={!canWrite} onChange={(event) => updateItem(item.key, { height: Number(event.target.value) })} className={cn(inputCls, 'h-9', mono)} /></Field>
+                        <Field label="Qtd."><input type="number" min={1} value={item.quantity} disabled={!canWrite} onChange={(event) => updateItem(item.key, { quantity: Math.max(1, Number(event.target.value)) })} className={cn(inputCls, 'h-9', mono)} /></Field>
+                        <Field label="Material (un)"><input type="number" min="0" step="0.01" value={item.materialUnitCost} disabled={!canWrite} onChange={(event) => updateItem(item.key, { materialUnitCost: Number(event.target.value) })} className={cn(inputCls, 'h-9', mono)} /></Field>
+                        <Field label="Mão de obra (un)"><input type="number" min="0" step="0.01" value={item.laborUnitCost} disabled={!canWrite} onChange={(event) => updateItem(item.key, { laborUnitCost: Number(event.target.value) })} className={cn(inputCls, 'h-9', mono)} /></Field>
                       </div>
                       <p className="mt-2 text-xs text-muted-foreground">
                         Área {(item.width * item.height * item.quantity).toFixed(2).replace('.', ',')} m² · Linha <span className={mono}>{brl((item.materialUnitCost + item.laborUnitCost) * item.quantity, 2)}</span>
@@ -573,7 +577,7 @@ export default function Orcamentos() {
                       <p className="text-xs text-muted-foreground">Juros de {String(draft.interest).replace('.', ',')}% a.m. · Total parcelado <span className={mono}>{brl(installmentValue(preview.total, parcels, draft.interest) * parcels)}</span></p>
                       <div>
                         <div className="flex justify-between text-sm mb-2"><span className="text-muted-foreground">Retenção de garantia</span><span className={`${mono} font-medium`}>{draft.retention}% · {brl(preview.total * draft.retention / 100)}</span></div>
-                        <input aria-label="Retenção" type="range" min={0} max={10} step={0.5} value={draft.retention} onChange={(event) => patch({ retention: Number(event.target.value) })} className="w-full accent-[var(--primary)]" />
+                        <input aria-label="Retenção" type="range" min={0} max={10} step={0.5} value={draft.retention} disabled={!canWrite} onChange={(event) => patch({ retention: Number(event.target.value) })} className="w-full accent-[var(--primary)]" />
                         <div className="flex justify-between text-[11px] text-muted-foreground"><span>0%</span><span>10%</span></div>
                       </div>
                     </div>
@@ -586,18 +590,24 @@ export default function Orcamentos() {
                       <p className="text-xs opacity-80 mt-2">Margem líquida estimada: <span className="font-mono">{brl(preview.margin, 2)}</span></p>
                       <Badge tone="info">{labelOf(QUOTE_STATUS_LABELS, draft.status)}</Badge>
                     </div>
-                    <div className="mt-6 space-y-2">
-                      <Button className="w-full bg-white text-blue-700 hover:bg-blue-50" disabled={saveMutation.isPending || loadingQuote} onClick={() => saveMutation.mutate({ nextStatus: 'enviado' })}>
-                        <Send size={16} /> Enviar ao Cliente
-                      </Button>
-                      <Button className="w-full bg-white/15 text-white hover:bg-white/25" disabled={saveMutation.isPending || loadingQuote} onClick={() => saveMutation.mutate({ nextStatus: 'aprovado', createProject: true })}>
-                        <CheckCircle2 size={16} /> Aprovar e criar projeto
-                      </Button>
-                      <Button className="w-full bg-white/15 text-white hover:bg-white/25" disabled={saveMutation.isPending || loadingQuote} onClick={() => saveMutation.mutate({})}>
-                        <Save size={16} /> Salvar
-                      </Button>
-                      {saveMutation.isPending && <p role="status" className="text-xs text-center opacity-80">Salvando...</p>}
-                    </div>
+                    {canWrite ? (
+                      <div className="mt-6 space-y-2">
+                        <Button className="w-full bg-white text-blue-700 hover:bg-blue-50" disabled={saveMutation.isPending || loadingQuote} onClick={() => saveMutation.mutate({ nextStatus: 'enviado' })}>
+                          <Send size={16} /> Enviar ao Cliente
+                        </Button>
+                        <Button className="w-full bg-white/15 text-white hover:bg-white/25" disabled={saveMutation.isPending || loadingQuote} onClick={() => saveMutation.mutate({ nextStatus: 'aprovado', createProject: true })}>
+                          <CheckCircle2 size={16} /> Aprovar e criar projeto
+                        </Button>
+                        <Button className="w-full bg-white/15 text-white hover:bg-white/25" disabled={saveMutation.isPending || loadingQuote} onClick={() => saveMutation.mutate({})}>
+                          <Save size={16} /> Salvar
+                        </Button>
+                        {saveMutation.isPending && <p role="status" className="text-xs text-center opacity-80">Salvando...</p>}
+                      </div>
+                    ) : (
+                      <p className="mt-6 rounded-md bg-white/10 px-3 py-2 text-xs text-white/90">
+                        Somente leitura: seu perfil não pode salvar ou aprovar orçamentos.
+                      </p>
+                    )}
                   </Card>
                 </div>
               )}
@@ -605,7 +615,7 @@ export default function Orcamentos() {
               <Card>
                 <CardHeader title="Observações" />
                 <div className="px-6 pb-6">
-                  <textarea rows={3} value={draft.notes} onChange={(event) => patch({ notes: event.target.value })} placeholder="Condições, escopo e observações do orçamento..." className={cn(inputCls, 'h-auto py-2.5')} />
+                  <textarea rows={3} value={draft.notes} disabled={!canWrite} onChange={(event) => patch({ notes: event.target.value })} placeholder="Condições, escopo e observações do orçamento..." className={cn(inputCls, 'h-auto py-2.5')} />
                 </div>
               </Card>
 

@@ -8,6 +8,7 @@ import {
 import { EmptyState, QueryError } from '../components/States'
 import { useToast } from '../components/Toast'
 import { useWorkspace } from '../lib/workspace'
+import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabaseClient'
 import { formatDate, formatDateTime, todayInput } from '../lib/format'
 import { ACTIVITY_STATUS_LABELS, CLIENT_STATUS_LABELS, labelOf } from '../lib/constants'
@@ -202,6 +203,7 @@ function ActivityForm({ workspaceId, clientId, team, onClose }: { workspaceId: s
 
 export default function Clientes() {
   const { workspaceId } = useWorkspace()
+  const { canWrite } = usePermissions()
   const [selected, setSelected] = useState<ClientSummary | null>(null)
   const [editing, setEditing] = useState<ClientSummary | null>(null)
   const [formOpen, setFormOpen] = useState(false)
@@ -265,8 +267,8 @@ export default function Clientes() {
   const total = clients.reduce((sum, client) => sum + Number(client.total_value), 0)
   const selectedActivities = (activitiesQuery.data ?? []).filter((activity) => activity.client_id === selected?.id)
 
-  const openNew = () => { setEditing(null); setFormOpen(true) }
-  const openEdit = (client: ClientSummary) => { setSelected(null); setActivityOpen(false); setEditing(client); setFormOpen(true) }
+  const openNew = () => { if (!canWrite) return; setEditing(null); setFormOpen(true) }
+  const openEdit = (client: ClientSummary) => { if (!canWrite) return; setSelected(null); setActivityOpen(false); setEditing(client); setFormOpen(true) }
   const closeForm = () => { setFormOpen(false); setEditing(null) }
 
   if (clientsQuery.error) {
@@ -276,7 +278,7 @@ export default function Clientes() {
   return (
     <>
       <PageHeader title="Clientes" subtitle={`${clients.length} clientes · ${brl(total)} em projetos`}>
-        <Button variant="primary" onClick={openNew}><Plus size={16} /> Novo Cliente</Button>
+        {canWrite && <Button variant="primary" onClick={openNew}><Plus size={16} /> Novo Cliente</Button>}
       </PageHeader>
 
       <Card className="overflow-hidden">
@@ -300,7 +302,7 @@ export default function Clientes() {
                   <td className={td}><Badge tone={statusTone[labelOf(CLIENT_STATUS_LABELS, client.status)]}>{labelOf(CLIENT_STATUS_LABELS, client.status)}</Badge></td>
                   <td className={td} onClick={(event) => event.stopPropagation()}>
                     <IconButton label="Ver cliente" onClick={() => setSelected(client)}><Eye size={16} /></IconButton>
-                    <IconButton label="Editar" onClick={() => openEdit(client)}><Pencil size={16} /></IconButton>
+                    {canWrite && <IconButton label="Editar" onClick={() => openEdit(client)}><Pencil size={16} /></IconButton>}
                   </td>
                 </tr>
               ))}
@@ -323,7 +325,7 @@ export default function Clientes() {
                   <p className="text-sm text-muted-foreground">Cliente desde {new Date(selected.created_at).getFullYear()}</p>
                 </div>
               </div>
-              <IconButton label="Editar cliente" onClick={() => openEdit(selected)}><Pencil size={16} /></IconButton>
+              {canWrite && <IconButton label="Editar cliente" onClick={() => openEdit(selected)}><Pencil size={16} /></IconButton>}
             </div>
 
             <div className="space-y-2 text-sm">
@@ -351,9 +353,9 @@ export default function Clientes() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Histórico de atividades</h4>
-                <Button size="sm" onClick={() => setActivityOpen((open) => !open)}><CalendarPlus size={14} /> Nova</Button>
+                {canWrite && <Button size="sm" onClick={() => setActivityOpen((open) => !open)}><CalendarPlus size={14} /> Nova</Button>}
               </div>
-              {activityOpen && (
+              {activityOpen && canWrite && (
                 <ActivityForm
                   workspaceId={workspaceId!}
                   clientId={selected.id}

@@ -8,6 +8,7 @@ import {
 import { EmptyState, QueryError } from '../components/States'
 import { useToast } from '../components/Toast'
 import { useWorkspace } from '../lib/workspace'
+import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabaseClient'
 import { formatDate, toDateInput, todayInput } from '../lib/format'
 import {
@@ -263,6 +264,7 @@ function InstallationForm({ workspaceId, installation, projects, team, onClose }
 
 export default function Projetos() {
   const { workspaceId } = useWorkspace()
+  const { canWrite } = usePermissions()
   const queryClient = useQueryClient()
   const toast = useToast()
   const [view, setView] = useState<'kanban' | 'list'>('kanban')
@@ -367,14 +369,15 @@ export default function Projetos() {
   const clients = clientsQuery.data ?? []
   const team = teamQuery.data ?? []
 
-  const openNewProject = () => { setEditingProject(null); setProjectFormOpen(true) }
-  const openEditProject = (project: ProjectWithRelations) => { setEditingProject(project); setProjectFormOpen(true) }
+  const openNewProject = () => { if (!canWrite) return; setEditingProject(null); setProjectFormOpen(true) }
+  const openEditProject = (project: ProjectWithRelations) => { if (!canWrite) return; setEditingProject(project); setProjectFormOpen(true) }
   const closeProjectForm = () => { setProjectFormOpen(false); setEditingProject(null) }
-  const openNewInstallation = () => { setEditingInstallation(null); setInstallationFormOpen(true) }
-  const openEditInstallation = (installation: InstallationWithRelations) => { setEditingInstallation(installation); setInstallationFormOpen(true) }
+  const openNewInstallation = () => { if (!canWrite) return; setEditingInstallation(null); setInstallationFormOpen(true) }
+  const openEditInstallation = (installation: InstallationWithRelations) => { if (!canWrite) return; setEditingInstallation(installation); setInstallationFormOpen(true) }
   const closeInstallationForm = () => { setInstallationFormOpen(false); setEditingInstallation(null) }
 
   const drop = (status: ProjectStatus) => {
+    if (!canWrite) { setDrag(null); setOver(null); return }
     if (drag) {
       const project = projects.find((entry) => entry.id === drag)
       if (project && project.status !== status) moveMutation.mutate({ id: drag, status })
@@ -397,8 +400,12 @@ export default function Projetos() {
     <>
       <PageHeader title="Gestão de Projetos" subtitle="Arraste os cartões para atualizar a etapa e gerencie a agenda de instalações">
         <Segmented value={view} onChange={setView} options={[{ id: 'list', label: <><List size={14} /> Lista</> }, { id: 'kanban', label: <><Columns3 size={14} /> Kanban</> }]} />
-        <Button onClick={openNewInstallation}><Calendar size={16} /> Nova Instalação</Button>
-        <Button variant="primary" onClick={openNewProject}><Plus size={16} /> Novo Projeto</Button>
+        {canWrite && (
+          <>
+            <Button onClick={openNewInstallation}><Calendar size={16} /> Nova Instalação</Button>
+            <Button variant="primary" onClick={openNewProject}><Plus size={16} /> Novo Projeto</Button>
+          </>
+        )}
       </PageHeader>
 
       {view === 'kanban' ? (
@@ -422,11 +429,15 @@ export default function Projetos() {
                   {list.map((project) => (
                     <article
                       key={project.id}
-                      draggable
-                      onDragStart={() => setDrag(project.id)}
+                      draggable={canWrite}
+                      onDragStart={() => canWrite && setDrag(project.id)}
                       onDragEnd={() => { setDrag(null); setOver(null) }}
                       onClick={() => openEditProject(project)}
-                      className={cn('bg-card border border-border rounded-lg p-3.5 shadow-card cursor-grab active:cursor-grabbing hover:border-primary/60 hover:shadow-md transition', drag === project.id && 'opacity-40 rotate-1')}
+                      className={cn(
+                        'bg-card border border-border rounded-lg p-3.5 shadow-card transition',
+                        canWrite ? 'cursor-grab active:cursor-grabbing hover:border-primary/60 hover:shadow-md' : 'cursor-default',
+                        drag === project.id && 'opacity-40 rotate-1',
+                      )}
                     >
                       <div className="flex items-start gap-1">
                         <GripVertical size={14} className="text-muted-foreground mt-0.5 -ml-1 shrink-0" aria-hidden />
@@ -465,7 +476,7 @@ export default function Projetos() {
                   <td className={`${td} text-muted-foreground`}>{formatDate(project.due_date)}</td>
                   <td className={td}><div className="h-1.5 w-28 rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${project.progress}%` }} /></div></td>
                   <td className={td}>{project.team_members?.name ?? '—'}</td>
-                  <td className={td}><IconButton label="Editar projeto" onClick={() => openEditProject(project)}><Pencil size={16} /></IconButton></td>
+                  <td className={td}>{canWrite && <IconButton label="Editar projeto" onClick={() => openEditProject(project)}><Pencil size={16} /></IconButton>}</td>
                 </tr>
               ))}
               {!projectsQuery.isLoading && projects.length === 0 && <tr><td colSpan={8}><EmptyState title="Nenhum projeto" description="Crie um projeto ou aprove um orçamento." /></td></tr>}
@@ -475,7 +486,7 @@ export default function Projetos() {
       )}
 
       <Card className="mt-4 overflow-hidden">
-        <CardHeader title="Agenda de Instalações" subtitle={`${installations.length} instalações registradas`} action={<Button size="sm" onClick={openNewInstallation}><Plus size={14} /> Agendar</Button>} />
+        <CardHeader title="Agenda de Instalações" subtitle={`${installations.length} instalações registradas`} action={canWrite ? <Button size="sm" onClick={openNewInstallation}><Plus size={14} /> Agendar</Button> : undefined} />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px]">
             <thead><tr>{['Data', 'Projeto', 'Cliente', 'Instalador', 'Endereço', 'Valor', 'Status', 'Ações'].map((header) => <th key={header} className={th}>{header}</th>)}</tr></thead>
@@ -490,10 +501,14 @@ export default function Projetos() {
                   <td className={`${td} ${mono}`}>{brl(Number(installation.value))}</td>
                   <td className={td}><Badge tone={statusTone[labelOf(INSTALLATION_STATUS_LABELS, installation.status)]}>{labelOf(INSTALLATION_STATUS_LABELS, installation.status)}</Badge></td>
                   <td className={td}>
-                    <IconButton label="Editar instalação" onClick={() => openEditInstallation(installation)}><Pencil size={16} /></IconButton>
-                    <IconButton label="Remover instalação" onClick={() => {
-                      if (window.confirm('Remover esta instalação?')) deleteInstallationMutation.mutate(installation.id)
-                    }}><Trash2 size={16} /></IconButton>
+                    {canWrite && (
+                      <>
+                        <IconButton label="Editar instalação" onClick={() => openEditInstallation(installation)}><Pencil size={16} /></IconButton>
+                        <IconButton label="Remover instalação" onClick={() => {
+                          if (window.confirm('Remover esta instalação?')) deleteInstallationMutation.mutate(installation.id)
+                        }}><Trash2 size={16} /></IconButton>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

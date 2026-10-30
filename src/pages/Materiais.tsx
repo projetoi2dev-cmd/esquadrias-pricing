@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Layers, Pencil, Plus, Search, Trash2, TrendingUp } from 'lucide-react'
+import { Eye, Layers, Pencil, Plus, Search, Trash2, TrendingUp } from 'lucide-react'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import {
   Badge, Button, Card, Drawer, Field, IconButton, PageHeader, TableSkeleton, brl, chartTip, cn,
@@ -9,6 +9,7 @@ import {
 import { EmptyState, QueryError } from '../components/States'
 import { useToast } from '../components/Toast'
 import { useWorkspace } from '../lib/workspace'
+import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabaseClient'
 import { formatDate, formatMonth } from '../lib/format'
 import { MATERIAL_CATEGORIES, MATERIAL_CATEGORY_LABELS, MATERIAL_UNIT_LABELS } from '../lib/constants'
@@ -137,6 +138,7 @@ function MaterialForm({ workspaceId, material, suppliers, onClose }: {
 
 export default function Materiais() {
   const { workspaceId } = useWorkspace()
+  const { canWrite } = usePermissions()
   const queryClient = useQueryClient()
   const toast = useToast()
   const [q, setQ] = useState('')
@@ -216,8 +218,8 @@ export default function Materiais() {
     onError: (error: Error) => toast.show(error.message, 'error'),
   })
 
-  const openNew = () => { setEditing(null); setFormOpen(true) }
-  const openEdit = (material: MaterialWithSupplier) => { setSelected(null); setEditing(material); setFormOpen(true) }
+  const openNew = () => { if (!canWrite) return; setEditing(null); setFormOpen(true) }
+  const openEdit = (material: MaterialWithSupplier) => { if (!canWrite) return; setSelected(null); setEditing(material); setFormOpen(true) }
   const closeForm = () => { setFormOpen(false); setEditing(null) }
 
   if (materialsQuery.error) {
@@ -229,7 +231,7 @@ export default function Materiais() {
   return (
     <>
       <PageHeader title="Banco de Materiais" subtitle={`${materials.length} itens cadastrados · histórico de custos e estoque`}>
-        <Button variant="primary" onClick={openNew}><Plus size={16} /> Novo Material</Button>
+        {canWrite && <Button variant="primary" onClick={openNew}><Plus size={16} /> Novo Material</Button>}
       </PageHeader>
 
       <Card className="overflow-hidden">
@@ -281,7 +283,9 @@ export default function Materiais() {
                     </td>
                     <td className={`${td} text-muted-foreground`}>{formatDate(material.updated_at)}</td>
                     <td className={td} onClick={(event) => event.stopPropagation()}>
-                      <IconButton label="Editar material" onClick={() => openEdit(material)}><Pencil size={16} /></IconButton>
+                      {canWrite
+                        ? <IconButton label="Editar material" onClick={() => openEdit(material)}><Pencil size={16} /></IconButton>
+                        : <IconButton label="Ver material" onClick={() => setSelected(material)}><Eye size={16} /></IconButton>}
                     </td>
                   </tr>
                 )
@@ -300,12 +304,14 @@ export default function Materiais() {
                 <h3 className="text-lg font-bold">{selected.name}</h3>
                 <p className="text-sm text-muted-foreground mt-1">{selected.suppliers?.name ?? 'Sem fornecedor'} · <span className={mono}>{brl(selected.cost, 2)}</span> / {MATERIAL_UNIT_LABELS[selected.unit]}</p>
               </div>
-              <div className="flex items-center gap-1">
-                <IconButton label="Editar material" onClick={() => openEdit(selected)}><Pencil size={16} /></IconButton>
-                <IconButton label="Remover material" onClick={() => {
-                  if (window.confirm(`Remover ${selected.name}?`)) deleteMutation.mutate(selected.id)
-                }}><Trash2 size={16} /></IconButton>
-              </div>
+              {canWrite && (
+                <div className="flex items-center gap-1">
+                  <IconButton label="Editar material" onClick={() => openEdit(selected)}><Pencil size={16} /></IconButton>
+                  <IconButton label="Remover material" onClick={() => {
+                    if (window.confirm(`Remover ${selected.name}?`)) deleteMutation.mutate(selected.id)
+                  }}><Trash2 size={16} /></IconButton>
+                </div>
+              )}
             </div>
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2"><Layers size={14} /> Hierarquia</h4>

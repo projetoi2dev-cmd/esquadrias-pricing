@@ -114,7 +114,7 @@ export const td = 'px-4 py-3 text-sm'
 export const tr = 'border-t border-border hover:bg-muted/60 transition-colors'
 export const mono = 'font-mono tabular-nums'
 export const inputCls =
-  'h-10 w-full rounded-md border border-border bg-card px-3 text-sm placeholder:text-muted-foreground hover:border-muted-foreground/50 transition'
+  'h-10 w-full rounded-md border border-border bg-card px-3 text-sm placeholder:text-muted-foreground hover:border-muted-foreground/50 transition disabled:cursor-not-allowed disabled:opacity-60'
 
 export function Field({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (

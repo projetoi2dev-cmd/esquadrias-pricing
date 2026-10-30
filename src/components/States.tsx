@@ -1,4 +1,4 @@
-import { AlertCircle, Loader2, RefreshCw } from 'lucide-react'
+import { AlertCircle, Eye, Loader2, RefreshCw } from 'lucide-react'
 import { Button, Card } from './ui'
 
 export function QueryError({ message, onRetry }: { message: string; onRetry?: () => void }) {
@@ -22,6 +22,18 @@ export function LoadingCard({ label = 'Carregando dados...' }: { label?: string 
       <Loader2 className="mx-auto mb-3 animate-spin" size={24} />
       <p className="text-sm">{label}</p>
     </Card>
+  )
+}
+
+export function ReadOnlyBanner({ roleLabel }: { roleLabel: string }) {
+  return (
+    <div className="mb-4 flex items-start gap-3 rounded-md border border-warning/40 bg-warning-soft px-4 py-3 text-sm text-warning print:hidden">
+      <Eye size={18} className="mt-0.5 shrink-0" />
+      <p>
+        <span className="font-semibold">Modo somente leitura.</span> Seu perfil ({roleLabel}) pode consultar os dados;
+        os módulos operacionais não permitem criar, editar ou excluir registros.
+      </p>
+    </div>
   )
 }
 

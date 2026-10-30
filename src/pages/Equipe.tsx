@@ -5,6 +5,7 @@ import { Avatar, Badge, Button, Card, Drawer, Field, IconButton, PageHeader, brl
 import { EmptyState, QueryError } from '../components/States'
 import { useToast } from '../components/Toast'
 import { useWorkspace } from '../lib/workspace'
+import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabaseClient'
 import type { TeamPerformance } from '../lib/database.types'
 
@@ -86,6 +87,7 @@ function TeamForm({ workspaceId, member, onClose }: { workspaceId: string; membe
 
 export default function Equipe() {
   const { workspaceId } = useWorkspace()
+  const { canWrite } = usePermissions()
   const [editing, setEditing] = useState<TeamPerformance | null>(null)
   const [formOpen, setFormOpen] = useState(false)
 
@@ -105,8 +107,8 @@ export default function Equipe() {
   })
 
   const team = teamQuery.data ?? []
-  const openNew = () => { setEditing(null); setFormOpen(true) }
-  const openEdit = (member: TeamPerformance) => { setEditing(member); setFormOpen(true) }
+  const openNew = () => { if (!canWrite) return; setEditing(null); setFormOpen(true) }
+  const openEdit = (member: TeamPerformance) => { if (!canWrite) return; setEditing(member); setFormOpen(true) }
   const closeForm = () => { setFormOpen(false); setEditing(null) }
 
   if (teamQuery.error) {
@@ -116,7 +118,7 @@ export default function Equipe() {
   return (
     <>
       <PageHeader title="Equipe de Instalação" subtitle={`${team.filter((member) => member.active).length} instaladores ativos`}>
-        <Button variant="primary" onClick={openNew}><Plus size={16} /> Novo Instalador</Button>
+        {canWrite && <Button variant="primary" onClick={openNew}><Plus size={16} /> Novo Instalador</Button>}
       </PageHeader>
 
       {team.length === 0 && !teamQuery.isLoading ? (
@@ -133,7 +135,7 @@ export default function Equipe() {
                       <h3 className="font-semibold leading-tight">{member.name}</h3>
                       <span className="flex items-center gap-1">
                         <Badge tone={member.active ? 'success' : 'neutral'}>{member.active ? 'Ativo' : 'Inativo'}</Badge>
-                        <IconButton label="Editar instalador" onClick={() => openEdit(member)}><Pencil size={15} /></IconButton>
+                        {canWrite && <IconButton label="Editar instalador" onClick={() => openEdit(member)}><Pencil size={15} /></IconButton>}
                       </span>
                     </div>
                     <p className={`${mono} text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5`}><Phone size={12} /> {member.phone || '—'}</p>

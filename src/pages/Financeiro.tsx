@@ -12,6 +12,7 @@ import { Kpi } from '../components/Kpi'
 import { EmptyState, QueryError } from '../components/States'
 import { useToast } from '../components/Toast'
 import { useWorkspace } from '../lib/workspace'
+import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabaseClient'
 import { buildCashSeries, isSettledTransaction, withBalance } from '../lib/finance'
 import { formatDate, parseDate, todayInput, toDateInput } from '../lib/format'
@@ -174,6 +175,7 @@ function TransactionForm({ workspaceId, transaction, clients, suppliers, default
 
 export default function Financeiro() {
   const { workspace, workspaceId } = useWorkspace()
+  const { canWrite } = usePermissions()
   const queryClient = useQueryClient()
   const toast = useToast()
   const [gran, setGran] = useState<'d' | 'w' | 'm'>('w')
@@ -320,6 +322,7 @@ export default function Financeiro() {
     .slice(0, 30), [transactions, payableFilter])
 
   const openForm = (type: TransactionType, transaction: TransactionWithRelations | null = null) => {
+    if (!canWrite) return
     setFormType(type)
     setEditing(transaction)
     setFormOpen(true)
@@ -330,7 +333,7 @@ export default function Financeiro() {
     return <QueryError message={(transactionsQuery.error as Error).message} onRetry={() => void transactionsQuery.refetch()} />
   }
 
-  const actionButtons = (transaction: TransactionWithRelations) => (
+  const actionButtons = (transaction: TransactionWithRelations) => canWrite && (
     <>
       {!isSettled(transaction.status) && (
         <IconButton label={transaction.type === 'receivable' ? 'Registrar recebimento' : 'Registrar pagamento'} onClick={() => settleMutation.mutate(transaction)}>
@@ -355,7 +358,7 @@ export default function Financeiro() {
             <option value="90">90 dias</option>
           </select>
         </div>
-        <Button variant="primary" onClick={() => openForm('receivable')}><Plus size={16} /> Novo Lançamento</Button>
+        {canWrite && <Button variant="primary" onClick={() => openForm('receivable')}><Plus size={16} /> Novo Lançamento</Button>}
       </PageHeader>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -400,7 +403,7 @@ export default function Financeiro() {
                   <option value="open">Em aberto</option>
                   <option value="all">Todos</option>
                 </select>
-                <Button size="sm" onClick={() => openForm('receivable')}><Plus size={14} /> Novo</Button>
+                {canWrite && <Button size="sm" onClick={() => openForm('receivable')}><Plus size={14} /> Novo</Button>}
               </div>
             }
           />
@@ -434,7 +437,7 @@ export default function Financeiro() {
                   <option value="open">Em aberto</option>
                   <option value="all">Todos</option>
                 </select>
-                <Button size="sm" onClick={() => openForm('payable')}><Plus size={14} /> Novo</Button>
+                {canWrite && <Button size="sm" onClick={() => openForm('payable')}><Plus size={14} /> Novo</Button>}
               </div>
             }
           />

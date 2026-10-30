@@ -5,6 +5,7 @@ import { Avatar, Badge, Button, Card, Field, PageHeader, brl, cn, inputCls, mono
 import { QueryError } from '../components/States'
 import { useToast } from '../components/Toast'
 import { useWorkspace } from '../lib/workspace'
+import { usePermissions } from '../lib/permissions'
 import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabaseClient'
 import { ROLE_LABELS } from '../lib/constants'
@@ -12,6 +13,7 @@ import type { Profile, WorkspaceMember, WorkspaceMemberWithProfile, WorkspaceRol
 
 export default function Configuracoes() {
   const { workspace, workspaceId, role } = useWorkspace()
+  const { canManage, isAdmin } = usePermissions()
   const { user, profile, refreshProfile, signOut } = useAuth()
   const queryClient = useQueryClient()
   const toast = useToast()
@@ -110,8 +112,6 @@ export default function Configuracoes() {
     onError: (error: Error) => toast.show(error.message, 'error'),
   })
 
-  const canWrite = role === 'admin' || role === 'gerente'
-  const isAdmin = role === 'admin'
   const members = membersQuery.data ?? []
 
   return (
@@ -133,20 +133,20 @@ export default function Configuracoes() {
             >
               <div className="grid sm:grid-cols-2 gap-3">
                 <Field label="Nome">
-                  <input disabled={!canWrite} value={workspaceForm.name} onChange={(event) => setWorkspaceForm({ ...workspaceForm, name: event.target.value })} className={inputCls} />
+                  <input disabled={!canManage} value={workspaceForm.name} onChange={(event) => setWorkspaceForm({ ...workspaceForm, name: event.target.value })} className={inputCls} />
                 </Field>
                 <Field label="CNPJ">
-                  <input disabled={!canWrite} value={workspaceForm.cnpj} onChange={(event) => setWorkspaceForm({ ...workspaceForm, cnpj: event.target.value })} className={cn(inputCls, mono)} />
+                  <input disabled={!canManage} value={workspaceForm.cnpj} onChange={(event) => setWorkspaceForm({ ...workspaceForm, cnpj: event.target.value })} className={cn(inputCls, mono)} />
                 </Field>
                 <Field label="Telefone">
-                  <input disabled={!canWrite} value={workspaceForm.phone} onChange={(event) => setWorkspaceForm({ ...workspaceForm, phone: event.target.value })} className={inputCls} />
+                  <input disabled={!canManage} value={workspaceForm.phone} onChange={(event) => setWorkspaceForm({ ...workspaceForm, phone: event.target.value })} className={inputCls} />
                 </Field>
                 <Field label="E-mail">
-                  <input type="email" disabled={!canWrite} value={workspaceForm.email} onChange={(event) => setWorkspaceForm({ ...workspaceForm, email: event.target.value })} className={inputCls} />
+                  <input type="email" disabled={!canManage} value={workspaceForm.email} onChange={(event) => setWorkspaceForm({ ...workspaceForm, email: event.target.value })} className={inputCls} />
                 </Field>
               </div>
               <Field label="Endereço">
-                <input disabled={!canWrite} value={workspaceForm.address} onChange={(event) => setWorkspaceForm({ ...workspaceForm, address: event.target.value })} className={inputCls} />
+                <input disabled={!canManage} value={workspaceForm.address} onChange={(event) => setWorkspaceForm({ ...workspaceForm, address: event.target.value })} className={inputCls} />
               </Field>
               <div className="grid grid-cols-3 gap-3 rounded-md bg-muted p-3 text-xs">
                 <div><p className="text-muted-foreground">Margem padrão</p><p className={`${mono} font-semibold`}>{workspace?.default_margin}%</p></div>
@@ -155,9 +155,9 @@ export default function Configuracoes() {
               </div>
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">
-                  {canWrite ? 'As alterações são registradas no workspace.' : 'Seu perfil é somente leitura para estes dados.'}
+                  {canManage ? 'As alterações são registradas no workspace.' : 'Seu perfil é somente leitura para estes dados.'}
                 </p>
-                <Button type="submit" variant="primary" disabled={!canWrite || workspaceMutation.isPending}>
+                <Button type="submit" variant="primary" disabled={!canManage || workspaceMutation.isPending}>
                   <Save size={15} /> {workspaceMutation.isPending ? 'Salvando...' : 'Salvar'}
                 </Button>
               </div>
