@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, ClipboardList, MapPin, Package, Plus, Save, Search, Send, Trash2 } from 'lucide-react'
 import {
@@ -56,6 +56,7 @@ export default function Orcamentos() {
 
   const [draft, setDraft] = useState<Draft | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const initialized = useRef(false)
   const [q, setQ] = useState('')
   const [picker, setPicker] = useState(false)
   const [parcels, setParcels] = useState(6)
@@ -144,13 +145,6 @@ export default function Orcamentos() {
     }
   }
 
-  useEffect(() => {
-    if (!draft && quotesQuery.data && clientsQuery.data && productsQuery.data && workspace) {
-      setDraft(createNewDraft())
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quotesQuery.data, clientsQuery.data, productsQuery.data, workspace])
-
   const openQuote = async (quote: QuoteWithClient) => {
     setLoadingQuote(true)
     const { data, error } = await supabase
@@ -160,6 +154,7 @@ export default function Orcamentos() {
       .order('created_at')
     if (error) {
       toast.show(error.message, 'error')
+      if (!draft) setDraft(createNewDraft())
       setLoadingQuote(false)
       return
     }
@@ -195,10 +190,24 @@ export default function Orcamentos() {
     setLoadingQuote(false)
   }
 
+  useEffect(() => {
+    if (initialized.current) return
+    if (!draft && quotesQuery.data && clientsQuery.data && productsQuery.data && workspace) {
+      initialized.current = true
+      if (quotesQuery.data.length > 0) {
+        void openQuote(quotesQuery.data[0])
+      } else {
+        setDraft(createNewDraft())
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quotesQuery.data, clientsQuery.data, productsQuery.data, workspace])
+
   const startNew = () => {
     setSelectedId(null)
     setDraft(createNewDraft())
     setPicker(false)
+    toast.show('Novo orçamento iniciado.')
   }
 
   const patch = (changes: Partial<Draft>) => setDraft((current) => current ? { ...current, ...changes } : current)
