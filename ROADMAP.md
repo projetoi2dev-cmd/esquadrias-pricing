@@ -1,14 +1,14 @@
 # Roadmap — Esquadra
 
 Base: relatório técnico de 27/10/2026, commit `17b895a`, deploy em `esquadrias-pricing.vercel.app`.
-Estado: integração com Supabase homologada (9/9 telas, RLS em 15/15 tabelas, 25 verificações) e perfil visualizador validado em API e UI (28 verificações), apta para uso controlado — não para operação irrestrita.
+Estado: integração com Supabase homologada (9/9 telas, RLS em 15/15 tabelas, 25 verificações) e perfil visualizador validado em API, UI e Vercel (28 verificações), apta para uso controlado — não para operação irrestrita.
 
 ## Estado atual verificado no código
 
 - Auth e papel do usuário: `src/lib/auth.tsx`, `src/lib/workspace.tsx`.
 - Navegação por estado interno, sem rotas por URL: `src/App.tsx:24`.
 - Gating por papel centralizado em `src/lib/permissions.ts` e aplicado em todas as telas; Configurações usa `canManage`/`isAdmin`.
-- Nenhum teste versionado; CI mínimo criado em `.github/workflows/ci.yml` (typecheck + build), ainda não commitado/executado no GitHub.
+- Nenhum teste versionado; CI mínimo commitado em `.github/workflows/ci.yml` (typecheck + build), falta adicionar testes unitários/RLS/E2E.
 - Produtos e fornecedores existem no schema e no seed, mas não têm tela de CRUD.
 - Exportação de relatórios usa `window.print()`.
 - Build com chunk principal de ~509 kB (gráficos já separados).
@@ -24,16 +24,16 @@ Objetivo: eliminar as pendências que impedem liberar acesso a outros perfis.
    - [x] Validar o resultado no navegador com um usuário `visualizador`.
    - Critério: usuário visualizador não vê botões de criar/editar/excluir em nenhum módulo.
 
-2. **Teste real com papel restrito** — concluído em localhost
+2. **Teste real com papel restrito** — concluído em localhost e Vercel
    - [x] Criar segundo usuário `teste@esquadra.com` no dashboard e vinculá-lo como `visualizador`.
    - [x] API: leitura 200 em 15/15 tabelas; INSERT 403 em 10/10 tabelas; `save_quote` negado com `P0001`.
    - [x] UI: 28/28 verificações aprovadas (banner, ações ocultas, campos desabilitados).
-   - [ ] Repetir o smoke no domínio publicado da Vercel.
+   - [x] Repetir o smoke no domínio publicado da Vercel (28/28).
    - Critério: evidência registrada no relatório, sem resíduos no banco.
 
 3. **Confirmar Supabase Auth** — concluído
    - [x] Site URL e Redirect URLs configurados para o domínio da Vercel.
-   - [ ] Registrar a evidência no relatório técnico.
+   - [x] Registrar a evidência no relatório técnico.
    - Critério: login e recuperação de sessão funcionando no domínio publicado.
 
 4. **Backup e retenção (mínimo viável)** — pendente
@@ -50,7 +50,7 @@ Objetivo: parar de depender de homologação manual.
 2. **Testes de schema/RLS versionados** (pgTAP ou harness PGlite):
    - Anônimo recebe 401; visualizador não escreve; `save_quote` é atômica; índice único de projeto por orçamento.
 3. **Smoke test E2E** (Playwright) das 9 telas + login.
-   - [x] Execução local do fluxo do visualizador (28 verificações aprovadas).
+   - [x] Execução local e na Vercel do fluxo do visualizador (28 verificações aprovadas).
    - [ ] Versionar o teste em `e2e/` e rodar no CI.
 4. **CI no GitHub Actions**: typecheck, testes, build e E2E em PR para `main`.
    - [x] Esqueleto com `npm ci`, `typecheck` e `build` em PR/push para `main`.
@@ -96,7 +96,7 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 1. [x] Implementar `usePermissions()` e aplicar o gating em todas as telas.
 2. [x] Configurar Site URL e Redirect URLs no Supabase Auth.
 3. [x] Criar o usuário `visualizador` no Supabase e validar leitura + bloqueio de escrita.
-4. [ ] Subir o esqueleto de CI (typecheck + build) no GitHub Actions — arquivo criado localmente; falta commit/push.
+4. [x] Subir o esqueleto de CI (typecheck + build) no GitHub Actions.
 5. [ ] Agendar backup diário e escrever o procedimento de restore.
 
 ## Progresso
@@ -105,6 +105,7 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 - 2026-10-30: script `supabase/bootstrap-viewer.sql` criado para vincular o usuário de teste.
 - 2026-10-30: CI mínimo criado em `.github/workflows/ci.yml` (typecheck + build).
 - 2026-10-30: usuário `teste@esquadra.com` vinculado como `visualizador`; API e UI validadas (15/15 leituras, 10/10 escritas bloqueadas, 28/28 checks de UI).
+- 2026-10-30: commit `dab7d94` publicado na Vercel; smoke do visualizador 28/28 em produção; relatório técnico atualizado.
 
 ## Fora de escopo por agora
 
