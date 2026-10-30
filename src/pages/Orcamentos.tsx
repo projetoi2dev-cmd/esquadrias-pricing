@@ -57,6 +57,8 @@ export default function Orcamentos() {
   const [draft, setDraft] = useState<Draft | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const initialized = useRef(false)
+  const formRef = useRef<HTMLDivElement>(null)
+  const openRequest = useRef(0)
   const [q, setQ] = useState('')
   const [picker, setPicker] = useState(false)
   const [parcels, setParcels] = useState(6)
@@ -146,15 +148,17 @@ export default function Orcamentos() {
   }
 
   const openQuote = async (quote: QuoteWithClient) => {
+    const request = ++openRequest.current
     setLoadingQuote(true)
     const { data, error } = await supabase
       .from('quote_items')
       .select('*')
       .eq('quote_id', quote.id)
       .order('created_at')
+    if (request !== openRequest.current) return
     if (error) {
       toast.show(error.message, 'error')
-      if (!draft) setDraft(createNewDraft())
+      setDraft((current) => current ?? createNewDraft())
       setLoadingQuote(false)
       return
     }
@@ -192,7 +196,7 @@ export default function Orcamentos() {
 
   useEffect(() => {
     if (initialized.current) return
-    if (!draft && quotesQuery.data && clientsQuery.data && productsQuery.data && workspace) {
+    if (!draft && quotesQuery.data && clientsQuery.data && workspace) {
       initialized.current = true
       if (quotesQuery.data.length > 0) {
         void openQuote(quotesQuery.data[0])
@@ -201,13 +205,16 @@ export default function Orcamentos() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quotesQuery.data, clientsQuery.data, productsQuery.data, workspace])
+  }, [quotesQuery.data, clientsQuery.data, workspace])
 
   const startNew = () => {
+    openRequest.current += 1
+    setLoadingQuote(false)
     setSelectedId(null)
     setDraft(createNewDraft())
     setPicker(false)
-    toast.show('Novo orçamento iniciado.')
+    toast.show('Novo orçamento iniciado. Adicione produtos e clique em Salvar.')
+    requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
 
   const patch = (changes: Partial<Draft>) => setDraft((current) => current ? { ...current, ...changes } : current)
@@ -454,7 +461,30 @@ export default function Orcamentos() {
           </div>
         </Card>
 
-        <div className="space-y-4 min-w-0">
+        <div ref={formRef} className="space-y-4 min-w-0 scroll-mt-4">
+          {draft && canWrite && (
+            <div className="sticky top-0 z-20 rounded-lg border border-border bg-card/95 px-4 py-3 shadow-card backdrop-blur supports-[backdrop-filter]:bg-card/85">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">{draft.code} · {draft.id ? 'Editando orçamento' : 'Novo orçamento'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {draft.items.length === 0
+                      ? 'Adicione produtos para salvar'
+                      : `${draft.items.length} ${draft.items.length === 1 ? 'item' : 'itens'} · ${brl(preview?.total ?? 0, 2)}`}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant="primary" disabled={saveMutation.isPending || loadingQuote} onClick={() => saveMutation.mutate({})}>
+                    <Save size={14} /> Salvar
+                  </Button>
+                  <Button size="sm" variant="secondary" disabled={saveMutation.isPending || loadingQuote} onClick={() => saveMutation.mutate({ nextStatus: 'enviado' })}>
+                    <Send size={14} /> Enviar ao cliente
+                  </Button>
+                </div>
+              </div>
+              {saveMutation.isPending && <p role="status" className="mt-2 text-xs text-muted-foreground">Salvando...</p>}
+            </div>
+          )}
           {!draft ? (
             <Card className="p-10 text-center text-sm text-muted-foreground">Carregando orçamento...</Card>
           ) : (
