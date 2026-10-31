@@ -8,7 +8,7 @@ Estado: integração com Supabase homologada (9/9 telas, RLS em 15/15 tabelas, 2
 - Auth e papel do usuário: `src/lib/auth.tsx`, `src/lib/workspace.tsx`.
 - Navegação por estado interno, sem rotas por URL: `src/App.tsx:24`.
 - Gating por papel centralizado em `src/lib/permissions.ts` e aplicado em todas as telas; Configurações usa `canManage`/`isAdmin`.
-- Testes unitários versionados com Vitest (25 casos em `src/lib/*.test.ts`); smoke E2E versionado em `e2e/` (viewer + admin simulado) e workflow manual `.github/workflows/e2e.yml`; CI em PR/push roda typecheck, testes e build.
+- Testes unitários versionados com Vitest (25 casos em `src/lib/*.test.ts`); harness de schema/RLS com PGlite em `supabase/tests/schema-rls.mjs`; smoke E2E versionado em `e2e/` (viewer + admin simulado) e workflow manual `.github/workflows/e2e.yml`; CI em PR/push roda typecheck, testes unitários, schema/RLS e build.
 - Produtos e fornecedores existem no schema e no seed, mas não têm tela de CRUD.
 - Exportação de relatórios usa `window.print()`.
 - Build com chunk principal de ~509 kB (gráficos já separados).
@@ -50,15 +50,17 @@ Objetivo: parar de depender de homologação manual.
    - [x] Buckets diário/semanal/mensal e saldo acumulado em `finance.ts`.
    - [x] Parsing e formatação pt-BR em `format.ts`.
    - [x] 25 testes passando em `npm run test`.
-2. **Testes de schema/RLS versionados** (pgTAP ou harness PGlite):
-   - Anônimo recebe 401; visualizador não escreve; `save_quote` é atômica; índice único de projeto por orçamento.
+2. **Testes de schema/RLS versionados** (harness PGlite) — concluído
+   - [x] Stubs de `auth.users`/`auth.uid()` e roles `anon`/`authenticated`.
+   - [x] Anônimo bloqueado; visualizador lê mas não escreve; `save_quote` atômica e substitui itens sem duplicar; um projeto por orçamento; escopo entre workspaces; idempotência de schema/bootstrap/seed.
+   - [x] `npm run test:schema` no CI.
 3. **Smoke test E2E** (Playwright) das 9 telas + login.
    - [x] Fluxo do visualizador (28 verificações) e admin simulado (novo orçamento + save flow) executados localmente e na Vercel.
    - [x] Versionar em `e2e/` com `playwright.config.ts` e scripts `test:e2e`/`test:e2e:ui`.
    - [ ] Rodar automaticamente em PR; o workflow manual `e2e.yml` requer os secrets `VIEWER_EMAIL`, `VIEWER_PASS` e, para servidor local, `VITE_SUPABASE_URL`/`VITE_SUPABASE_PUBLISHABLE_KEY`.
 4. **CI no GitHub Actions**: typecheck, testes, build e E2E em PR para `main`.
-   - [x] `npm ci`, `typecheck`, `test` e `build` em PR/push para `main`.
-   - [ ] Adicionar schema/RLS e E2E automático ao pipeline.
+   - [x] `npm ci`, `typecheck`, `test`, `test:schema` e `build` em PR/push para `main`.
+   - [ ] Adicionar E2E automático ao pipeline (depende dos secrets).
 5. **Monitoramento**: Sentry no frontend, alertas de erro e uptime check na Vercel.
 6. **Performance**: `manualChunks` para separar React, Supabase e Recharts; meta de chunk principal < 300 kB.
 
@@ -101,7 +103,7 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 2. [x] Configurar Site URL e Redirect URLs no Supabase Auth.
 3. [x] Criar o usuário `visualizador` no Supabase e validar leitura + bloqueio de escrita.
 4. [x] Subir o esqueleto de CI (typecheck + build) no GitHub Actions.
-5. [x] Versionar testes unitários (Vitest) e E2E; CI passa a rodar typecheck, testes e build.
+5. [x] Versionar testes unitários (Vitest), schema/RLS (PGlite) e E2E; CI roda typecheck, testes unitários, schema/RLS e build.
 6. [ ] Configurar secrets do E2E no GitHub e agendar backup/restore.
 
 ## Progresso
@@ -114,6 +116,7 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 - 2026-10-30: commit `4c9af07` corrige o fluxo de novo orçamento (abre o mais recente e confirma a criação); admin 7/7 e viewer 28/28 na Vercel.
 - 2026-10-31: commit `b8b561d` rola até o formulário e fixa as ações de salvar no topo; hint "Adicione produtos para salvar"; admin 7/7, save flow 3/3 (validação + RPC) e viewer 28/28 na Vercel; layout 1024/1280/1440 com salvar visível após o clique.
 - 2026-10-31: Vitest com 25 testes em pricing/finance/format; E2E versionado em `e2e/` (viewer 28 checks + admin/save flow) validado em localhost e Vercel; CI passou a rodar `npm run test`; workflow manual `e2e.yml` criado.
+- 2026-10-31: harness PGlite versionado em `supabase/tests/schema-rls.mjs` (anon/viewer bloqueados, `save_quote` atômica, um projeto por orçamento, escopo entre workspaces, idempotência); `npm run test:schema` adicionado ao CI.
 
 ## Fora de escopo por agora
 
