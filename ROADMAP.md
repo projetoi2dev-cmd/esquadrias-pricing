@@ -107,6 +107,7 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 - 2026-10-30: usuário `teste@esquadra.com` vinculado como `visualizador`; API e UI validadas (15/15 leituras, 10/10 escritas bloqueadas, 28/28 checks de UI).
 - 2026-10-30: commit `dab7d94` publicado na Vercel; smoke do visualizador 28/28 em produção; relatório técnico atualizado.
 - 2026-10-30: commit `4c9af07` corrige o fluxo de novo orçamento (abre o mais recente e confirma a criação); admin 7/7 e viewer 28/28 na Vercel.
+- 2026-10-31: commit `b8b561d` rola até o formulário e fixa as ações de salvar no topo; hint "Adicione produtos para salvar"; admin 7/7, save flow 3/3 (validação + RPC) e viewer 28/28 na Vercel; layout 1024/1280/1440 com salvar visível após o clique.
 
 ## Fora de escopo por agora
 
