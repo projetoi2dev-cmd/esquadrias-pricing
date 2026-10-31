@@ -11,7 +11,7 @@ Estado: integração com Supabase homologada (9/9 telas, RLS em 15/15 tabelas, 2
 - Testes unitários versionados com Vitest (25 casos em `src/lib/*.test.ts`); harness de schema/RLS com PGlite em `supabase/tests/schema-rls.mjs`; smoke E2E versionado em `e2e/` (viewer + admin simulado) e workflow manual `.github/workflows/e2e.yml`; CI em PR/push roda typecheck, testes unitários, schema/RLS e build.
 - Produtos e fornecedores existem no schema e no seed, mas não têm tela de CRUD.
 - Exportação de relatórios usa `window.print()`.
-- Build com chunk principal de ~509 kB (gráficos já separados).
+- Build com chunk principal de ~31 kB; vendors separados (React ~219 kB, Supabase ~214 kB, Recharts ~343 kB).
 
 ## Fase 0 — Fechar a homologação (1–2 semanas)
 
@@ -62,7 +62,9 @@ Objetivo: parar de depender de homologação manual.
    - [x] `npm ci`, `typecheck`, `test`, `test:schema` e `build` em PR/push para `main`.
    - [ ] Adicionar E2E automático ao pipeline (depende dos secrets).
 5. **Monitoramento**: Sentry no frontend, alertas de erro e uptime check na Vercel.
-6. **Performance**: `manualChunks` para separar React, Supabase e Recharts; meta de chunk principal < 300 kB.
+6. **Performance**: `codeSplitting` para separar React, Supabase, TanStack Query e ícones; Recharts já em chunk próprio — concluído
+   - [x] Chunk principal caiu de ~509 kB para ~31 kB; sem aviso de chunk > 500 kB.
+   - [x] E2E 3/3 no preview do build com os chunks separados.
 
 Critério de saída: PR bloqueado com CI vermelho, erro de produção gerando alerta.
 
@@ -105,6 +107,7 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 4. [x] Subir o esqueleto de CI (typecheck + build) no GitHub Actions.
 5. [x] Versionar testes unitários (Vitest), schema/RLS (PGlite) e E2E; CI roda typecheck, testes unitários, schema/RLS e build.
 6. [ ] Configurar secrets do E2E no GitHub e agendar backup/restore.
+7. [x] Separar vendors no build; chunk principal < 300 kB.
 
 ## Progresso
 
@@ -117,6 +120,7 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 - 2026-10-31: commit `b8b561d` rola até o formulário e fixa as ações de salvar no topo; hint "Adicione produtos para salvar"; admin 7/7, save flow 3/3 (validação + RPC) e viewer 28/28 na Vercel; layout 1024/1280/1440 com salvar visível após o clique.
 - 2026-10-31: Vitest com 25 testes em pricing/finance/format; E2E versionado em `e2e/` (viewer 28 checks + admin/save flow) validado em localhost e Vercel; CI passou a rodar `npm run test`; workflow manual `e2e.yml` criado.
 - 2026-10-31: harness PGlite versionado em `supabase/tests/schema-rls.mjs` (anon/viewer bloqueados, `save_quote` atômica, um projeto por orçamento, escopo entre workspaces, idempotência); `npm run test:schema` adicionado ao CI.
+- 2026-10-31: `codeSplitting` no `vite.config.ts` separa React, Supabase, TanStack Query e ícones; chunk principal caiu de ~509 kB para ~31 kB; E2E 3/3 no preview do build.
 
 ## Fora de escopo por agora
 
