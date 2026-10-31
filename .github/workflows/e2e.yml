@@ -1,0 +1,50 @@
+name: E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'URL base (deixe vazio para subir o Vite local)'
+        required: false
+        default: ''
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npx playwright install --with-deps chrome
+
+      - name: Verificar credenciais
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+          VIEWER_EMAIL: ${{ secrets.VIEWER_EMAIL }}
+          VIEWER_PASS: ${{ secrets.VIEWER_PASS }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$VIEWER_EMAIL" ] || [ -z "$VIEWER_PASS" ]; then
+            echo "::error::Configure os secrets VIEWER_EMAIL e VIEWER_PASS."
+            exit 1
+          fi
+          if [ -z "$BASE_URL" ]; then
+            if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+              echo "::error::Configure VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY ou informe uma base_url publicada."
+              exit 1
+            fi
+          fi
+
+      - run: npm run test:e2e
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+          VIEWER_EMAIL: ${{ secrets.VIEWER_EMAIL }}
+          VIEWER_PASS: ${{ secrets.VIEWER_PASS }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
