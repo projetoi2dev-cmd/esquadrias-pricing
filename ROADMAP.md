@@ -8,7 +8,7 @@ Estado: integração com Supabase homologada (9/9 telas, RLS em 15/15 tabelas, 2
 - Auth e papel do usuário: `src/lib/auth.tsx`, `src/lib/workspace.tsx`.
 - Navegação por estado interno, sem rotas por URL: `src/App.tsx:24`.
 - Gating por papel centralizado em `src/lib/permissions.ts` e aplicado em todas as telas; Configurações usa `canManage`/`isAdmin`.
-- Testes unitários versionados com Vitest (25 casos em `src/lib/*.test.ts`); harness de schema/RLS com PGlite em `supabase/tests/schema-rls.mjs`; smoke E2E versionado em `e2e/` (viewer + admin simulado) e workflow manual `.github/workflows/e2e.yml`; CI em PR/push roda typecheck, testes unitários, schema/RLS e build.
+- Testes unitários versionados com Vitest (25 casos em `src/lib/*.test.ts`); harness de schema/RLS com PGlite em `supabase/tests/schema-rls.mjs`; smoke E2E versionado em `e2e/` (viewer + admin simulado); workflow `.github/workflows/e2e.yml` roda em PR e manual, com secrets configurados; CI em PR/push roda typecheck, testes unitários, schema/RLS e build.
 - Produtos e fornecedores existem no schema e no seed, mas não têm tela de CRUD.
 - Exportação de relatórios usa `window.print()`.
 - Build com chunk principal de ~31 kB; vendors separados (React ~219 kB, Supabase ~214 kB, Recharts ~343 kB).
@@ -54,13 +54,13 @@ Objetivo: parar de depender de homologação manual.
    - [x] Stubs de `auth.users`/`auth.uid()` e roles `anon`/`authenticated`.
    - [x] Anônimo bloqueado; visualizador lê mas não escreve; `save_quote` atômica e substitui itens sem duplicar; um projeto por orçamento; escopo entre workspaces; idempotência de schema/bootstrap/seed.
    - [x] `npm run test:schema` no CI.
-3. **Smoke test E2E** (Playwright) das 9 telas + login.
+3. **Smoke test E2E** (Playwright) das 9 telas + login — concluído
    - [x] Fluxo do visualizador (28 verificações) e admin simulado (novo orçamento + save flow) executados localmente e na Vercel.
    - [x] Versionar em `e2e/` com `playwright.config.ts` e scripts `test:e2e`/`test:e2e:ui`.
-   - [ ] Rodar automaticamente em PR; o workflow manual `e2e.yml` requer os secrets `VIEWER_EMAIL`, `VIEWER_PASS` e, para servidor local, `VITE_SUPABASE_URL`/`VITE_SUPABASE_PUBLISHABLE_KEY`.
-4. **CI no GitHub Actions**: typecheck, testes, build e E2E em PR para `main`.
+   - [x] Rodar automaticamente em PR; secrets `VIEWER_EMAIL`, `VIEWER_PASS`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` configurados; workflow validado no GitHub Actions.
+4. **CI no GitHub Actions**: typecheck, testes, build e E2E em PR para `main` — concluído
    - [x] `npm ci`, `typecheck`, `test`, `test:schema` e `build` em PR/push para `main`.
-   - [ ] Adicionar E2E automático ao pipeline (depende dos secrets).
+   - [x] E2E automático em PR com secrets; execução manual também disponível.
 5. **Monitoramento**: Sentry no frontend, alertas de erro e uptime check na Vercel.
 6. **Performance**: `codeSplitting` para separar React, Supabase, TanStack Query e ícones; Recharts já em chunk próprio — concluído
    - [x] Chunk principal caiu de ~509 kB para ~31 kB; sem aviso de chunk > 500 kB.
@@ -106,8 +106,9 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 3. [x] Criar o usuário `visualizador` no Supabase e validar leitura + bloqueio de escrita.
 4. [x] Subir o esqueleto de CI (typecheck + build) no GitHub Actions.
 5. [x] Versionar testes unitários (Vitest), schema/RLS (PGlite) e E2E; CI roda typecheck, testes unitários, schema/RLS e build.
-6. [ ] Configurar secrets do E2E no GitHub e agendar backup/restore.
-7. [x] Separar vendors no build; chunk principal < 300 kB.
+6. [x] Configurar secrets do E2E no GitHub.
+7. [ ] Agendar backup/restore.
+8. [x] Separar vendors no build; chunk principal < 300 kB.
 
 ## Progresso
 
@@ -122,6 +123,7 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 - 2026-10-31: harness PGlite versionado em `supabase/tests/schema-rls.mjs` (anon/viewer bloqueados, `save_quote` atômica, um projeto por orçamento, escopo entre workspaces, idempotência); `npm run test:schema` adicionado ao CI.
 - 2026-10-31: `codeSplitting` no `vite.config.ts` separa React, Supabase, TanStack Query e ícones; chunk principal caiu de ~509 kB para ~31 kB; E2E 3/3 no preview do build.
 - 2026-10-31: CI success no commit `3d4bf7b`; Vercel publicou os chunks separados (`index-BO9JgQW6.js`, 31 kB) e o E2E 3/3 passou na URL publicada.
+- 2026-10-31: secrets do E2E configurados; workflow `e2e.yml` passou a rodar em PR e a execução manual no GitHub Actions terminou com sucesso (3/3).
 
 ## Fora de escopo por agora
 
