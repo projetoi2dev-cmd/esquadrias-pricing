@@ -121,6 +121,7 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 - 2026-10-31: Vitest com 25 testes em pricing/finance/format; E2E versionado em `e2e/` (viewer 28 checks + admin/save flow) validado em localhost e Vercel; CI passou a rodar `npm run test`; workflow manual `e2e.yml` criado.
 - 2026-10-31: harness PGlite versionado em `supabase/tests/schema-rls.mjs` (anon/viewer bloqueados, `save_quote` atômica, um projeto por orçamento, escopo entre workspaces, idempotência); `npm run test:schema` adicionado ao CI.
 - 2026-10-31: `codeSplitting` no `vite.config.ts` separa React, Supabase, TanStack Query e ícones; chunk principal caiu de ~509 kB para ~31 kB; E2E 3/3 no preview do build.
+- 2026-10-31: CI success no commit `3d4bf7b`; Vercel publicou os chunks separados (`index-BO9JgQW6.js`, 31 kB) e o E2E 3/3 passou na URL publicada.
 
 ## Fora de escopo por agora
 
