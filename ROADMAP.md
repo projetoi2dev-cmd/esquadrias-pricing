@@ -36,9 +36,11 @@ Objetivo: eliminar as pendências que impedem liberar acesso a outros perfis.
    - [x] Registrar a evidência no relatório técnico.
    - Critério: login e recuperação de sessão funcionando no domínio publicado.
 
-4. **Backup e retenção (mínimo viável)** — pendente
-   - Ativar backup diário/PITR no Supabase e documentar o processo de restore.
-   - Definir retenção de dados e rotina de expurgo LGPD.
+4. **Backup e retenção (mínimo viável)** — runbook pronto; ativação e restore de teste pendentes
+   - [x] Runbook em `docs/backup-restore.md`, script `scripts/backup-supabase.ps1` e verificação `supabase/tests/verify-restore.sql` testada no harness.
+   - [ ] Ativar backup diário/PITR no dashboard do Supabase.
+   - [ ] Executar restore de teste em projeto separado e registrar a evidência.
+   - [ ] Definir retenção de dados e rotina de expurgo LGPD.
    - Critério: um restore de teste executado e documentado.
 
 ## Fase 1 — Confiabilidade e CI (2–3 semanas)
@@ -107,8 +109,9 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 4. [x] Subir o esqueleto de CI (typecheck + build) no GitHub Actions.
 5. [x] Versionar testes unitários (Vitest), schema/RLS (PGlite) e E2E; CI roda typecheck, testes unitários, schema/RLS e build.
 6. [x] Configurar secrets do E2E no GitHub.
-7. [ ] Agendar backup/restore.
-8. [x] Separar vendors no build; chunk principal < 300 kB.
+7. [x] Documentar backup/restore e verificação pós-restore.
+8. [ ] Ativar backup/PITR e executar restore de teste.
+9. [x] Separar vendors no build; chunk principal < 300 kB.
 
 ## Progresso
 
@@ -124,6 +127,7 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 - 2026-10-31: `codeSplitting` no `vite.config.ts` separa React, Supabase, TanStack Query e ícones; chunk principal caiu de ~509 kB para ~31 kB; E2E 3/3 no preview do build.
 - 2026-10-31: CI success no commit `3d4bf7b`; Vercel publicou os chunks separados (`index-BO9JgQW6.js`, 31 kB) e o E2E 3/3 passou na URL publicada.
 - 2026-10-31: secrets do E2E configurados; workflow `e2e.yml` passou a rodar em PR e a execução manual no GitHub Actions terminou com sucesso (3/3).
+- 2026-10-31: runbook de backup/restore em `docs/backup-restore.md`, script `scripts/backup-supabase.ps1` e verificação `supabase/tests/verify-restore.sql` (executada no harness PGlite).
 
 ## Fora de escopo por agora
 

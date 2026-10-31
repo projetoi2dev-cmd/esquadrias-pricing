@@ -387,5 +387,8 @@ console.log('OK cross-workspace reference blocked')
 
 await run('final reset', 'reset role; update auth.context set uid = null;')
 
+const verifyRestoreSql = fs.readFileSync(path.join(repo, 'supabase/tests/verify-restore.sql'), 'utf8')
+await run('verify-restore.sql', verifyRestoreSql)
+
 console.log('\nAll SQL checks passed.')
 await db.close()
