@@ -1,0 +1,91 @@
+name: Backup
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: github.event_name == 'workflow_dispatch' || vars.BACKUP_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validar secrets
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::Configure o secret SUPABASE_DB_URL com a connection string do banco."
+            exit 1
+          fi
+          if [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::Configure o secret BACKUP_PASSPHRASE para criptografar o dump."
+            exit 1
+          fi
+
+      - name: Gerar dump do schema public
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          stamp="$(date -u +%Y%m%d-%H%M%S)"
+          mkdir -p backup
+          supabase db dump --db-url "$SUPABASE_DB_URL" --schema public -f "backup/schema-$stamp.sql"
+          supabase db dump --db-url "$SUPABASE_DB_URL" --schema public --data-only -f "backup/data-$stamp.sql"
+          echo "BACKUP_STAMP=$stamp" >> "$GITHUB_ENV"
+
+      - name: Criptografar e gerar checksums
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          cd backup
+          for file in *.sql; do
+            gpg --batch --yes --passphrase "$BACKUP_PASSPHRASE" --symmetric --cipher-algo AES256 "$file"
+            rm "$file"
+          done
+          sha256sum ./*.gpg > SHA256SUMS
+          {
+            echo "commit=$GITHUB_SHA"
+            echo "run=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "timestamp=$BACKUP_STAMP"
+            echo "files:"
+            ls -lh ./*.gpg
+            echo "sha256:"
+            cat SHA256SUMS
+          } > manifest.txt
+          ls -lh
+
+      - name: Validar criptografia
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          cd backup
+          for file in *.gpg; do
+            gpg --batch --yes --passphrase "$BACKUP_PASSPHRASE" --decrypt "$file" > /dev/null
+          done
+
+      - name: Publicar artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: esquadra-backup-${{ github.run_id }}
+          path: backup/
+          retention-days: 30
+          if-no-files-found: error

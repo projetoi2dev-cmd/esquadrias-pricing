@@ -36,11 +36,13 @@ Objetivo: eliminar as pendências que impedem liberar acesso a outros perfis.
    - [x] Registrar a evidência no relatório técnico.
    - Critério: login e recuperação de sessão funcionando no domínio publicado.
 
-4. **Backup e retenção (mínimo viável)** — runbook pronto; ativação e restore de teste pendentes
+4. **Backup e retenção (mínimo viável)** — runbook e backup gratuito prontos; primeiro run e restore de teste pendentes
    - [x] Runbook em `docs/backup-restore.md`, script `scripts/backup-supabase.ps1` e verificação `supabase/tests/verify-restore.sql` testada no harness.
-   - [ ] Ativar backup diário/PITR no dashboard do Supabase.
+   - [x] Workflow `.github/workflows/backup.yml` com dump diário do schema `public`, criptografia GPG, `SHA256SUMS`, manifesto e artifact de 30 dias.
+   - [ ] Configurar secrets `SUPABASE_DB_URL`/`BACKUP_PASSPHRASE` e variable `BACKUP_ENABLED=true`; executar o workflow com sucesso.
    - [ ] Executar restore de teste em projeto separado e registrar a evidência.
    - [ ] Definir retenção de dados e rotina de expurgo LGPD.
+   - Nota: o plano Free não oferece backup automático/PITR; não exigir ativação no dashboard. O dump cobre `public`, não o Auth.
    - Critério: um restore de teste executado e documentado.
 
 ## Fase 1 — Confiabilidade e CI (2–3 semanas)
@@ -110,8 +112,9 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 5. [x] Versionar testes unitários (Vitest), schema/RLS (PGlite) e E2E; CI roda typecheck, testes unitários, schema/RLS e build.
 6. [x] Configurar secrets do E2E no GitHub.
 7. [x] Documentar backup/restore e verificação pós-restore.
-8. [ ] Ativar backup/PITR e executar restore de teste.
+8. [ ] Configurar secrets do backup, rodar o workflow `backup.yml` e executar restore de teste (Free; sem PITR).
 9. [x] Separar vendors no build; chunk principal < 300 kB.
+10. [x] Criar workflow de backup gratuito com artifact criptografado.
 
 ## Progresso
 
@@ -128,6 +131,7 @@ Critério de saída: operação diária sem SQL manual para cadastros básicos.
 - 2026-10-31: CI success no commit `3d4bf7b`; Vercel publicou os chunks separados (`index-BO9JgQW6.js`, 31 kB) e o E2E 3/3 passou na URL publicada.
 - 2026-10-31: secrets do E2E configurados; workflow `e2e.yml` passou a rodar em PR e a execução manual no GitHub Actions terminou com sucesso (3/3).
 - 2026-10-31: runbook de backup/restore em `docs/backup-restore.md`, script `scripts/backup-supabase.ps1` e verificação `supabase/tests/verify-restore.sql` (executada no harness PGlite).
+- 2026-10-31: workflow `.github/workflows/backup.yml` criado para backup diário gratuito no GitHub Actions: dump do `public`, GPG AES256, checksums/manifesto e artifact de 30 dias; secrets e primeiro run pendentes.
 
 ## Fora de escopo por agora
 
